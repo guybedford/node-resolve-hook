@@ -39,15 +39,15 @@ The resolve hook here would only apply to the resolution algorithm applied for E
 
 ### Hook Registration
 
-Registration of loader hooks requires a top-level API. For this we use a `registerHook` method on the `module` object:
+Registration of loader hooks requires a top-level API. For this we use a `setModuleResolver` method on the `module` object:
 
 ```js
 import module from 'module';
-module.setResolver(resolverHookFunction);
+module.setModuleResolver(resolverHookFunction);
 ```
 
 Hook registration is application-level and applies to all modules loaded in the application after the registration function has been called.
-When multiple calls to `setResolver` are made, the entire resolver is replaced by the most recent `setResolver` call.
+When multiple calls to `setModuleResolver` are made, the entire resolver is replaced by the most recent `setModuleResolver` call.
 
 The issue that arises when creating module loader hooks is that they themselves must be loaded as modules, so any modules loaded as part of the hook registration process will miss the hook pipeline. This isn't a problem though if we consider the registration of hooks as forming a boot phase. During this boot loading, the module graph is loaded into the same registry but without any of the hooks applying. Once the hooks are added, then the application level loading can begin. This is fully in line with standard bootstrapping principles.
 
