@@ -35,6 +35,8 @@ This hook then enables full experimentation of custom resolution of modules (inc
 
 If the return value is not a valid File URL, an error is thrown. NodeJS core modules should be referred to using the `node:[internalname]` internal URI scheme. Evaluated scripts or custom VM executions are similarly assigned a unique `eval:[uniqueId]` URI when hooking into the resolver resolutions.
 
+The resolve hook here would only apply to the resolution algorithm applied for ES modules, and would not apply to resolutions of CommonJS modules from within other CommonJS modules, as the CJS resolver remains fully backwards compatible with its existing implementation in Node.
+
 ### Hook Registration
 
 Registration of loader hooks requires a top-level API. For this we use a `registerHook` method on the `module` object:
@@ -47,18 +49,7 @@ module.setResolver(resolverHookFunction);
 Hook registration is application-level and applies to all modules loaded in the application after the registration function has been called.
 When multiple calls to `setResolver` are made, the entire resolver is replaced by the most recent `setResolver` call.
 
-The issue that arises when creating module loader hooks is that they apply to a boot time of the application, and so can't easily
-themselves be loaded as modules without missing the pipeline. This isn't a problem though if we consider the registration of hooks as forming a boot phase. During this boot loading, the module graph is loaded into the same registry but without any of the hooks applying. Once the hooks are added, then the application level loading can begin. This is fully in line with standard bootstrapping principles.
-
-```js
-import module from 'module';
-module.setResolver(async (name, parentUrl) => {
-  return {
-    resolved: url.resolve(name, parentUrl),
-    format: 'cjs'
-  };
-});
-```
+The issue that arises when creating module loader hooks is that they themselves must be loaded as modules, so any modules loaded as part of the hook registration process will miss the hook pipeline. This isn't a problem though if we consider the registration of hooks as forming a boot phase. During this boot loading, the module graph is loaded into the same registry but without any of the hooks applying. Once the hooks are added, then the application level loading can begin. This is fully in line with standard bootstrapping principles.
 
 These hooks could be wrapped up by a custom interface similar to the way `@std/esm` works today, with all the above reducing to a workflow something like:
 
