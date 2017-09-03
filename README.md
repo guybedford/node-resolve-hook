@@ -2,34 +2,33 @@
 
 The NodeJS module system interfaces for CommonJS are transparently available through both private and public APIs, allowing users to hook into custom resolutions as needed to alter the NodeJS resolution algorithm and loading process with a high amount of flexibility.
 
-With the introduction of a C++ API for ES module loading, this same transparency won't be possible. So if these features
-are to continue to be supported, they would need to have their own user-facing API provided.
+With the introduction of the new ES module loading API, this type of hooking is no longer possible through the private and public APIs, providing an opportunity to rethink a public hook architecture for introspection and modification of the module loader pipeline.
 
 ### Basic Hooks
 
 Rather than try to specify a fully hookable interface like the [WhatWG Loader Specification](https://github.com/whatwg/loader), the goal here is to specify the minimum hook surface area to achieve the same use cases that are already in use in NodeJS today.
 
-For now, this document is suggesting only a **resolver hook**. There is the scope for a `fetch` or `translate` hook as in the WhatWG specification, alternatively a more fine-trained instantiation hook could be a possible addition that captures both of these in future for fullly fine-grained control over the module semantics, but this may be reliant on a more stable V8 API and module wrapper concept. This would enable the full depth of APM use cases.
+Starting from the simplest hook, this document specifies a **resolver hook**. There is further scope for a `fetch` or `translate` hook as in the WhatWG specification, alternatively a more fine-trained `instantiate` hook could be a possible addition that captures both of these in future for fullly fine-grained control over the module semantics, but this may be reliant on a more stable V8 API and module wrapper concept to enable the full depth of APM use cases.
 
 In this document, `module` is used as the `import module from 'module'` top-level API in NodeJS.
 
 ## Resolve Hook
 
-Unlike the [WhatWG loader spec resolve hook](https://whatwg.github.io/loader/#resolve), this hook returns an object containing the `resolved` string URL of the module as well as any additional metadata that might be needed.
+Unlike the [WhatWG loader spec resolve hook](https://whatwg.github.io/loader/#resolve), this hook returns an object containing the `url` string URL of the module as well as any additional metadata that might be needed.
 
-Initially the only other property included is a `format` property, which specifies the module format of the resolved module as one of `"esm", "cjs", "wasm", "json", "binary", "native"`, indicating the parse goal of the resolved module.
+Initially the only other property included is a `format` property, which specifies the module format of the resolved module as one of `"esm", "cjs", "wasm", "json", "binary" (`.node` files), "native"` (builtin module) indicating the parse goal of the resolved module.
 
 A resolve hook is a function:
 
 ```
-async resolve (name: string, parentModuleUrlOrString: string) => { url: URL, format: string }
+async resolve (name: string, parentURL: URL) => { url: URL, format: string }
 ```
 
-where both _parentModuleUrlOrString_ and the value of `resolved` are fully-formed URLs according to the URL specification.
+where both _parentURL_ and the returned value of `url` are valid fully-formed URL objects according to the URL specification.
 
-The NodeJS resolver should ideally then be exposed through a public API to remain user-accessible, something along the lines of `require('module').resolve`.
+The NodeJS resolver used by default is then exposed through a public API to remain user-accessible as `require('module').resolve`.
 
-The entire resolve function should be hookable to allow maximum flexibility. Custom resolvers can then build on top of the NodeJS `module.resolve` implementation.
+The entire resolve function is hookable to allow maximum flexibility. Custom resolvers can then build on top of the exposed NodeJS `module.resolve` implementation.
 
 This hook then enables full experimentation of custom resolution of modules (including remote modules).
 
