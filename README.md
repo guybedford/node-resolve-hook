@@ -17,15 +17,15 @@ In this document, `module` is used as the `import module from 'module'` top-leve
 
 Unlike the [WhatWG loader spec resolve hook](https://whatwg.github.io/loader/#resolve), this hook returns an object containing the `resolved` string URL of the module as well as any additional metadata that might be needed.
 
-Initially the only other property included is a `format` property, which specifies the module format of the resolved module as one of `"esm", "cjs", "wasm", "json", "node"`, indicating the parse goal of the resolved module.
+Initially the only other property included is a `format` property, which specifies the module format of the resolved module as one of `"esm", "cjs", "wasm", "json", "binary", "native"`, indicating the parse goal of the resolved module.
 
 A resolve hook is a function:
 
 ```
-async resolve (name: string, parentModuleUrl: string) => { resolved: string, format: string }
+async resolve (name: string, parentModuleUrlOrString: string) => { url: URL, format: string }
 ```
 
-where both _parentModuleUrl_ and the value of `resolved` are fully-formed URLs according to the URL specification.
+where both _parentModuleUrlOrString_ and the value of `resolved` are fully-formed URLs according to the URL specification.
 
 The NodeJS resolver should ideally then be exposed through a public API to remain user-accessible, something along the lines of `require('module').resolve`.
 
